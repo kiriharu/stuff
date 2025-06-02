@@ -1,0 +1,58 @@
+Subject: [PATCH] add oauth only registration
+---
+Index: apps/users/utils.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/apps/users/utils.py b/apps/users/utils.py
+--- a/apps/users/utils.py  (revision cf67212dd3615df561218cea29e5da819b6efa10)
++++ b/apps/users/utils.py  (date 1748889499011)
+@@ -2,6 +2,8 @@
+
+ from apps.users.models import User
+
++def is_socialapp_user_registration_open() -> bool:
++    return settings.ENABLE_SOCIAL_APP_USER_REGISTRATION or not User.objects.exists()
+
+ def is_user_registration_open() -> bool:
+     return settings.ENABLE_USER_REGISTRATION or not User.objects.exists()
+Index: glitchtip/settings.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/glitchtip/settings.py b/glitchtip/settings.py
+--- a/glitchtip/settings.py  (revision cf67212dd3615df561218cea29e5da819b6efa10)
++++ b/glitchtip/settings.py  (date 1748889577219)
+@@ -718,6 +718,7 @@
+     SOCIALACCOUNT_PROVIDERS["microsoft"] = {"TENANT": MICROSOFT_TENANT}
+
+ ENABLE_USER_REGISTRATION = env.bool("ENABLE_USER_REGISTRATION", True)
++ENABLE_SOCIAL_APP_USER_REGISTRATION = env.bool("ENABLE_SOCIAL_APP_USER_REGISTRATION", True)
+ ENABLE_ORGANIZATION_CREATION = env.bool(
+     "ENABLE_OPEN_USER_REGISTRATION", env.bool("ENABLE_ORGANIZATION_CREATION", False)
+ )
+Index: glitchtip/adapters.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/glitchtip/adapters.py b/glitchtip/adapters.py
+--- a/glitchtip/adapters.py  (revision cf67212dd3615df561218cea29e5da819b6efa10)
++++ b/glitchtip/adapters.py  (date 1748889566750)
+@@ -2,12 +2,12 @@
+ from allauth.account.internal.flows.login import record_authentication
+ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+
+-from apps.users.utils import is_user_registration_open
++from apps.users.utils import is_user_registration_open, is_socialapp_user_registration_open
+
+
+ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
+     def is_open_for_signup(self, request, sociallogin):
+-        return is_user_registration_open()
++        return is_user_registration_open() or is_socialapp_user_registration_open()
+
+
+ class CustomDefaultAccountAdapter(DefaultAccountAdapter):
